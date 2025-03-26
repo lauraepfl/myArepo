@@ -3,8 +3,8 @@
 
 #VORONOI
 #CHUNKING
-#PERIODIC 
-#COOLING
+PERIODIC 
+COOLING
 #MESHRELAX_DENSITY_IN_INPUT		 #input density instead of masses
 #--------------------------------------- Basic operation mode of code
 REFLECTIVE_Z=2                           # in-/outflow boundary conditions in x direction

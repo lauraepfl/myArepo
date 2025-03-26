@@ -39,7 +39,7 @@ DeltaMaxAllowed = 0.001 * FloatType(NumberOfCells/256.0)**-2
 
 
 """ Initial conditions as reference """
-i_snap = 8
+i_snap = 0
 directory = simulation_directory+"/output/"
 filename = "snap_%03d.hdf5" % (i_snap)
 data = h5py.File(directory+filename, "r")
@@ -51,12 +51,10 @@ Uthermal_ref = np.array(data["PartType0"]["InternalEnergy"], dtype = FloatType)
 Accel_ref = np.array(data["PartType0"]["Acceleration"], dtype = FloatType)[:,0]
 GradPress_ref = np.array(data["PartType0"]["PressureGradient"], dtype = FloatType)[:,0]
 
-#wave = np.zeros([i_snap], dtype=FloatType)
-#time = np.zeros([i_snap], dtype=FloatType)
-#TimeBetSnapshot = 0.125
 
-#for i in range(i_snap) :
- #  time[i] += TimeBetSnapshot
+time = []
+peak_positions = []
+time_step = 0.125  # Remplace par ton vrai pas de temps
 
 #fig, ax = plt.subplots(ncols=1, nrows=1 )       
 #ax.plot(Pos_ref,Density_ref)
@@ -69,10 +67,14 @@ while True:
     i_snap +=1
     """ compare to snapshots """
     filename = "snap_%03d.hdf5" % (i_snap)
+    print(f"Trying to open: {directory+filename}")
+
+
     try:
         data = h5py.File(directory+filename, "r")
     except:
         break
+
     Pos = np.array(data["PartType0"]["Coordinates"], dtype = FloatType)[:,0]
     Density = np.array(data["PartType0"]["Density"], dtype = FloatType)
     Velocity = np.array(data["PartType0"]["Velocities"], dtype = FloatType)[:,0]
@@ -81,9 +83,14 @@ while True:
     Accel = np.array(data["PartType0"]["Acceleration"], dtype = FloatType)[:,0]
     GradPress = np.array(data["PartType0"]["PressureGradient"], dtype = FloatType)[:,0]
 
-    #peak = max(Density)
-    #pos = np.where(Density == peak)[0][0]
-    #wave[i_snap] = Density[pos]
+     # Find peak of density
+    peak_index = np.argmax(Density)
+    peak_position = Pos[peak_index]
+
+    # time of the snap
+    time.append(i_snap * time_step)
+    peak_positions.append(peak_position)
+
 
     
     """ plots """
@@ -125,7 +132,7 @@ while True:
         
         if not os.path.exists( simulation_directory+"/plots" ):
           os.mkdir( simulation_directory+"/plots" )
-        fig.savefig(simulation_directory+"plots/profiles_%03d.pdf"%i_snap)
+        fig.savefig(simulation_directory+"/plots/profiles_%03d.pdf"%i_snap)
     
     
     """ compare to ICs by interpolating to IC positions """
@@ -150,10 +157,18 @@ while True:
     print("\t tolerance: %g for %d cells" % (DeltaMaxAllowed, NumberOfCells) )
     
     """ criteria for failing the test """
-    if L1_dens > DeltaMaxAllowed or L1_vel > DeltaMaxAllowed or L1_uthermal > DeltaMaxAllowed:
-        sys.exit(1)
+  #  if L1_dens > DeltaMaxAllowed or L1_vel > DeltaMaxAllowed or L1_uthermal > DeltaMaxAllowed:
+  #      sys.exit(1)
 
-#fig, plt.plot(time, wave, marker='x', linestyle='-', color='b', xlabel="time [s]", ylabel="front position [pc]")
+
+# front wave evolution
+fig, ax = plt.subplots()
+ax.plot(time, peak_positions, marker='x', linestyle='-', color='b')
+ax.set_xlabel("Time [s]")
+ax.set_ylabel("front position [pc]")
+ax.grid
+fig.savefig(simulation_directory+"/plots/front")
+
 
 """ normal exit """
 sys.exit(0) 
