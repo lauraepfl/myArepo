@@ -54,12 +54,14 @@ GradPress_ref = np.array(data["PartType0"]["PressureGradient"], dtype = FloatTyp
 
 time = []
 peak_positions = []
+peak_Rad = []
 time_step = 0.125  # Remplace par ton vrai pas de temps
-
+RadialMomentum = np.empty((0,i_snap))
 #fig, ax = plt.subplots(ncols=1, nrows=1 )       
 #ax.plot(Pos_ref,Density_ref)
 #fig.savefig("test")
 #plt.show()
+
 
 
 
@@ -79,6 +81,19 @@ while True:
     Density = np.array(data["PartType0"]["Density"], dtype = FloatType)
     Velocity = np.array(data["PartType0"]["Velocities"], dtype = FloatType)[:,0]
     Uthermal = np.array(data["PartType0"]["InternalEnergy"], dtype = FloatType)
+    Volume = []
+
+    for i,r in enumerate(Pos) :
+      if i == 0 :
+        Volume.append(4./3.*np.pi*(Pos[i]**3))
+      else :
+        Volume.append(4./3.*np.pi*(Pos[i]**3 - Pos[i-1]**3))
+
+
+    Mass = Density*Volume
+    RadMom = Velocity*Mass
+
+    
     
     Accel = np.array(data["PartType0"]["Acceleration"], dtype = FloatType)[:,0]
     GradPress = np.array(data["PartType0"]["PressureGradient"], dtype = FloatType)[:,0]
@@ -87,9 +102,25 @@ while True:
     peak_index = np.argmax(Density)
     peak_position = Pos[peak_index]
 
+    # Find peak of Radial Momentum
+    peakRad_index = np.argmax(RadMom)
+    RadPos = Pos[peakRad_index]
+
     # time of the snap
     time.append(i_snap * time_step)
     peak_positions.append(peak_position)
+    peak_Rad.append(RadPos)
+    #RadialMomentum = np.append(RadialMomentum, RadMom,axis=0)
+    #RadialMomentum_list = []
+    #RadialMomentum_list.append(RadMom)
+    #RadialMomentum = np.vstack(RadialMomentum_list)
+
+    if RadialMomentum.size == 0:
+      RadialMomentum = RadMom[np.newaxis, :]  # Crée une matrice 2D avec une seule ligne
+    else:
+      RadialMomentum = np.vstack((RadialMomentum, RadMom))  # Ajoute une nouvelle ligne
+
+
 
 
     
@@ -160,14 +191,36 @@ while True:
   #  if L1_dens > DeltaMaxAllowed or L1_vel > DeltaMaxAllowed or L1_uthermal > DeltaMaxAllowed:
   #      sys.exit(1)
 
+####################################### plots ######################################
 
 # front wave evolution
 fig, ax = plt.subplots()
 ax.plot(time, peak_positions, marker='x', linestyle='-', color='b')
 ax.set_xlabel("Time [s]")
 ax.set_ylabel("front position [pc]")
-ax.grid
+ax.grid(True)
 fig.savefig(simulation_directory+"/plots/front")
+
+# Radial Momentum evolution
+fig, ax = plt.subplots()
+for i in range(RadialMomentum.shape[0]):
+    ax.plot(Pos, RadialMomentum[i, :], label=f'Time step {i}')
+
+ax.set_xlabel("Position [pc]")
+ax.set_ylabel("Radial Momentum []")
+#ax.set_title("Superposition des courbes")
+ax.legend()
+ax.grid(True)
+fig.savefig(simulation_directory+"/plots/RadialMomentum")
+
+# Peak radial momentum evolution
+fig, ax = plt.subplots()
+ax.plot(time, peak_Rad, marker='x', linestyle='-', color='b')
+ax.set_xlabel("Time [s]")
+ax.set_ylabel("Radial Momentum peak position [pc]")
+ax.grid(True)
+fig.savefig(simulation_directory+"/plots/RadialPeak")
+
 
 
 """ normal exit """
