@@ -50,6 +50,7 @@ Uthermal_ref = np.array(data["PartType0"]["InternalEnergy"], dtype = FloatType)
 
 Accel_ref = np.array(data["PartType0"]["Acceleration"], dtype = FloatType)[:,0]
 GradPress_ref = np.array(data["PartType0"]["PressureGradient"], dtype = FloatType)[:,0]
+UnitTime = 0.977 #in MY
 
 
 time = []
@@ -58,9 +59,14 @@ peak_Rad = []
 time_step = 0.01  # Remplace par ton vrai pas de temps
 RadialMomentum = np.empty((0,i_snap))
 totRadMom = np.zeros(20)
+totUtherm = np.zeros(20)
+totUkin = np.zeros(20)
+totUtot = np.zeros(20)
 Uthermal_all = np.empty((0,i_snap))
 Ukinetic_all = np.empty((0,i_snap))
 Utot_all = Uthermal_all + Ukinetic_all
+Ufond = Uthermal_ref[Uthermal_ref.size-1]
+print(Ufond)
 
 
 
@@ -95,6 +101,9 @@ while True:
     Ukinetic = 0.5*Velocity**2*Mass
 
     totRadMom[i_snap-1] = RadMom.sum()
+    totUtherm[i_snap-1] = Uthermal.sum() - Ufond
+    totUkin[i_snap-1] = Ukinetic.sum()
+    totUtot[i_snap-1] = Uthermal.sum() - Ufond + Ukinetic.sum()
 
     
     
@@ -110,7 +119,7 @@ while True:
     RadPos = Pos[peakRad_index]
 
     # time of the snap
-    time.append(i_snap * time_step)
+    time.append(i_snap * time_step * UnitTime)
     peak_positions.append(peak_position)
     peak_Rad.append(RadPos)
 
@@ -209,7 +218,7 @@ while True:
 # front wave evolution
 fig, ax = plt.subplots()
 ax.plot(time, peak_positions, marker='x', linestyle='-', color='b')
-ax.set_xlabel("Time [s]")
+ax.set_xlabel("Time [MY]")
 ax.set_ylabel("front position [pc]")
 ax.grid(True)
 fig.savefig(simulation_directory+"/plots/front")
@@ -229,7 +238,7 @@ fig.savefig(simulation_directory+"/plots/RadialMomentum")
 # Peak radial momentum evolution
 fig, ax = plt.subplots()
 ax.plot(time, peak_Rad, marker='x', linestyle='-', color='b')
-ax.set_xlabel("Time [s]")
+ax.set_xlabel("Time [MY]")
 ax.set_ylabel("Radial Momentum peak position [pc]")
 #ax.set_title("Case with cooling")
 ax.grid(True)
@@ -274,12 +283,42 @@ fig.savefig(simulation_directory+"/plots/Tot_Energy")
 #  Total radial momentum
 fig, ax = plt.subplots()
 ax.plot(time, totRadMom, marker='x', linestyle='-', color='b')
-ax.set_xlabel("Time [s]")
+ax.set_xlabel("Time [MY]")
 ax.set_ylabel("Total Radial Momentum")
 ax.set_xscale("log")
 ax.set_yscale("log")
 ax.grid(True)
 fig.savefig(simulation_directory+"/plots/TotalRad")
+
+#  Total Thermal energy
+fig, ax = plt.subplots()
+ax.plot(time, totUtherm, marker='x', linestyle='-', color='b')
+ax.set_xlabel("Time [MY]")
+ax.set_ylabel("Total Thermal Energy")
+ax.set_xscale("log")
+ax.set_yscale("log")
+ax.grid(True)
+fig.savefig(simulation_directory+"/plots/TotalUth")
+
+#  Total Kinetic Energy
+fig, ax = plt.subplots()
+ax.plot(time, totUkin, marker='x', linestyle='-', color='b')
+ax.set_xlabel("Time [MY]")
+ax.set_ylabel("Total Kinetic Energy")
+ax.set_xscale("log")
+ax.set_yscale("log")
+ax.grid(True)
+fig.savefig(simulation_directory+"/plots/TotalUkin")
+
+#  Total Energy
+fig, ax = plt.subplots()
+ax.plot(time, totUtot, marker='x', linestyle='-', color='b')
+ax.set_xlabel("Time [MY]")
+ax.set_ylabel("Total Energy")
+ax.set_xscale("log")
+ax.set_yscale("log")
+ax.grid(True)
+fig.savefig(simulation_directory+"/plots/TotalU")
 
 
 
