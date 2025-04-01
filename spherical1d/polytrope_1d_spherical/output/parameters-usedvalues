@@ -9,7 +9,7 @@ ResubmitOn                                        0
 ResubmitCommand                                   my-scriptfile
 OutputListFilename                                ol
 OutputListOn                                      0
-CoolingOn                                         0
+CoolingOn                                         1
 StarformationOn                                   0
 Omega0                                            0
 OmegaBaryon                                       0
@@ -24,8 +24,8 @@ CpuTimeBetRestartFile                             9000
 TimeLimitCPU                                      90000
 TimeBetStatistics                                 1
 TimeBegin                                         0
-TimeMax                                           1
-TimeBetSnapshot                                   0.125
+TimeMax                                           0.2
+TimeBetSnapshot                                   0.01
 UnitVelocity_in_cm_per_s                          100000
 UnitLength_in_cm                                  3.086e+18
 UnitMass_in_g                                     1.98e+33
@@ -33,7 +33,7 @@ GravityConstantInternal                           1
 ErrTolIntAccuracy                                 0.1
 ErrTolTheta                                       0.1
 ErrTolForceAcc                                    0.1
-MaxSizeTimestep                                   0.125
+MaxSizeTimestep                                   0.001
 MinSizeTimestep                                   1e-10
 CourantFac                                        0.3
 LimitUBelowThisDensity                            0
@@ -65,8 +65,9 @@ SofteningTypeOfPartType3                          0
 SofteningTypeOfPartType4                          0
 SofteningTypeOfPartType5                          0
 InitGasTemp                                       0
-MinGasTemp                                        0
+MinGasTemp                                        0.01
 MinEgySpec                                        0
 MinimumDensityOnStartUp                           0
-CoreRadius                                        0.1
-CoreMass                                          0.00412455
+CoreRadius                                        0
+CoreMass                                          0
+TreecoolFile                                      /work/garcia/myArepo/data/TREECOOL_ep

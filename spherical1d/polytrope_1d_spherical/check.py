@@ -55,12 +55,12 @@ GradPress_ref = np.array(data["PartType0"]["PressureGradient"], dtype = FloatTyp
 time = []
 peak_positions = []
 peak_Rad = []
-time_step = 0.125  # Remplace par ton vrai pas de temps
+time_step = 0.01  # Remplace par ton vrai pas de temps
 RadialMomentum = np.empty((0,i_snap))
-#fig, ax = plt.subplots(ncols=1, nrows=1 )       
-#ax.plot(Pos_ref,Density_ref)
-#fig.savefig("test")
-#plt.show()
+totRadMom = np.zeros(20)
+Uthermal_all = np.empty((0,i_snap))
+Ukinetic_all = np.empty((0,i_snap))
+Utot_all = Uthermal_all + Ukinetic_all
 
 
 
@@ -92,6 +92,9 @@ while True:
 
     Mass = Density*Volume
     RadMom = Velocity*Mass
+    Ukinetic = 0.5*Velocity**2*Mass
+
+    totRadMom[i_snap-1] = RadMom.sum()
 
     
     
@@ -110,16 +113,22 @@ while True:
     time.append(i_snap * time_step)
     peak_positions.append(peak_position)
     peak_Rad.append(RadPos)
-    #RadialMomentum = np.append(RadialMomentum, RadMom,axis=0)
-    #RadialMomentum_list = []
-    #RadialMomentum_list.append(RadMom)
-    #RadialMomentum = np.vstack(RadialMomentum_list)
+
 
     if RadialMomentum.size == 0:
       RadialMomentum = RadMom[np.newaxis, :]  # Crée une matrice 2D avec une seule ligne
     else:
       RadialMomentum = np.vstack((RadialMomentum, RadMom))  # Ajoute une nouvelle ligne
 
+    if Uthermal_all.size == 0:
+      Uthermal_all = Uthermal[np.newaxis, :]  # Crée une matrice 2D avec une seule ligne
+    else:
+      Uthermal_all = np.vstack((Uthermal_all, Uthermal))  # Ajoute une nouvelle ligne
+
+    if Ukinetic_all.size == 0:
+      Ukinetic_all = Ukinetic[np.newaxis, :]  # Crée une matrice 2D avec une seule ligne
+    else:
+      Ukinetic_all = np.vstack((Ukinetic_all, Ukinetic))  # Ajoute une nouvelle ligne
 
 
 
@@ -133,29 +142,32 @@ while True:
         ax[0].plot(Pos, Density, 'r+', label='Arepo cells')
         ax[0].plot(Pos_ref, Density_ref, 'k--', label='initial profile', lw=0.7)
         ax[0].set_ylabel(r"density")
-        ax[0].fill_between([0.1,0.7],[0.0,0.0],[1.01,1.01], color='k',alpha=0.2)
-        ax[0].set_ylim( 0., 1. )
+        #ax[0].fill_between([0.1,0.7],[0.0,0.0],[1.01,1.01], color='k',alpha=0.2)
+        #ax[0].set_ylim( 0., 1. )
+        ax[0].set_yscale("log")
+        ax[0].set_xscale("log")
+
         
-        ax[1].plot(Pos, Density/Density_ref, 'b')
+        ax[1].plot(Pos, Density, 'b')
         ax[1].plot(Pos_ref, [1.0]*Pos_ref.shape[0], 'k--', lw=0.7)
         ax[1].set_ylabel(r"rel. density")
-        ax[1].set_ylim([0.99,1.01])
-        ax[1].fill_between([0.1,0.7],[0.99,0.99],[1.01,1.01], color='k',alpha=0.2)
+        #ax[1].set_ylim([0.99,1.01])
+        #ax[1].fill_between([0.1,0.7],[0.99,0.99],[1.01,1.01], color='k',alpha=0.2)
         
         ax[2].plot(Pos, Velocity, 'b')
         ax[2].plot(Pos_ref, [0.0]*Pos_ref.shape[0], 'k--', lw=0.7)
         ax[2].set_ylabel(r"velocity")
-        ax[2].set_ylim([-0.01,0.01])
-        ax[2].fill_between([0.1,0.7],[-0.01,-0.01],[0.01,0.01], color='k',alpha=0.2)
+        #ax[2].set_ylim([-0.01,0.01])
+        #ax[2].fill_between([0.1,0.7],[-0.01,-0.01],[0.01,0.01], color='k',alpha=0.2)
         
         ax[3].plot(Pos[:-1], Accel[:-1] - GradPress[:-1] / Density[:-1], 'b')
         ax[3].plot(Pos_ref[:-1], Accel_ref[:-1] - GradPress_ref[:-1] / Density_ref[:-1], 'k--', lw=0.7)
-        ax[3].set_ylim([-0.5,0.1])#
+       # ax[3].set_ylim([-0.5,0.1])#
         
         ax[3].set_ylabel(r"net accel.")
         ax[3].set_xlabel(r"radius")
-        ax[3].set_xlim([0.0,0.8])
-        ax[3].fill_between([0.1,0.7],[-0.5,-0.5],[0.1,0.1], color='k',alpha=0.2)
+       # ax[3].set_xlim([0.0,0.8])
+       # ax[3].fill_between([0.1,0.7],[-0.5,-0.5],[0.1,0.1], color='k',alpha=0.2)
         
         ax[0].legend(loc=1, frameon=False)
         
@@ -164,6 +176,7 @@ while True:
         if not os.path.exists( simulation_directory+"/plots" ):
           os.mkdir( simulation_directory+"/plots" )
         fig.savefig(simulation_directory+"/plots/profiles_%03d.pdf"%i_snap)
+        plt.close(fig)
     
     
     """ compare to ICs by interpolating to IC positions """
@@ -208,7 +221,7 @@ for i in range(RadialMomentum.shape[0]):
 
 ax.set_xlabel("Position [pc]")
 ax.set_ylabel("Radial Momentum []")
-#ax.set_title("Superposition des courbes")
+#ax.set_title("Case with cooling")
 ax.legend()
 ax.grid(True)
 fig.savefig(simulation_directory+"/plots/RadialMomentum")
@@ -218,8 +231,55 @@ fig, ax = plt.subplots()
 ax.plot(time, peak_Rad, marker='x', linestyle='-', color='b')
 ax.set_xlabel("Time [s]")
 ax.set_ylabel("Radial Momentum peak position [pc]")
+#ax.set_title("Case with cooling")
 ax.grid(True)
 fig.savefig(simulation_directory+"/plots/RadialPeak")
+
+# Thermal energy evolution
+fig, ax = plt.subplots()
+for i in range(Uthermal_all.shape[0]):
+    ax.plot(Pos, Uthermal_all[i, :], label=f'Time step {i}')
+
+ax.set_xlabel("Position [pc]")
+ax.set_ylabel("Thermal Energy [ergs]")
+#ax.set_title("Case with cooling")
+ax.legend()
+ax.grid(True)
+fig.savefig(simulation_directory+"/plots/Uthermal")
+
+# Kinetic energy evolution
+fig, ax = plt.subplots()
+for i in range(Ukinetic_all.shape[0]):
+    ax.plot(Pos, Ukinetic_all[i, :], label=f'Time step {i}')
+
+ax.set_xlabel("Position [pc]")
+ax.set_ylabel("Kinetic Energy [ergs]")
+#ax.set_title("Case with cooling")
+ax.legend()
+ax.grid(True)
+fig.savefig(simulation_directory+"/plots/UKinetic")
+
+# Total energy evolution
+fig, ax = plt.subplots()
+for i in range(Ukinetic_all.shape[0]):
+    ax.plot(Pos, Ukinetic_all[i, :], label=f'Time step {i}')
+
+ax.set_xlabel("Position [pc]")
+ax.set_ylabel("Total Energy [ergs]")
+#ax.set_title("Case with cooling")
+ax.legend()
+ax.grid(True)
+fig.savefig(simulation_directory+"/plots/Tot_Energy")
+
+#  Total radial momentum
+fig, ax = plt.subplots()
+ax.plot(time, totRadMom, marker='x', linestyle='-', color='b')
+ax.set_xlabel("Time [s]")
+ax.set_ylabel("Total Radial Momentum")
+ax.set_xscale("log")
+ax.set_yscale("log")
+ax.grid(True)
+fig.savefig(simulation_directory+"/plots/TotalRad")
 
 
 
