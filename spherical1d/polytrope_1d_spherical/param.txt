@@ -15,7 +15,7 @@ ResubmitCommand                       my-scriptfile
 OutputListFilename                    ol
 OutputListOn                          0
 
-CoolingOn                             1
+CoolingOn                             0
 StarformationOn                       0
 
 Omega0                                0.0
@@ -94,4 +94,3 @@ MinimumDensityOnStartUp               0.0
 
 CoreRadius                            0
 CoreMass                              0
-TreecoolFile                          /work/garcia/myArepo/data/TREECOOL_ep

@@ -57,6 +57,8 @@ time = []
 peak_positions = []
 peak_Rad = []
 time_step = 0.01  # Remplace par ton vrai pas de temps
+T=1e+4
+kb=1.38e-23
 RadialMomentum = np.empty((0,i_snap))
 totRadMom = np.zeros(20)
 totUtherm = np.zeros(20)
@@ -65,7 +67,7 @@ totUtot = np.zeros(20)
 Uthermal_all = np.empty((0,i_snap))
 Ukinetic_all = np.empty((0,i_snap))
 Utot_all = Uthermal_all + Ukinetic_all
-Ufond = Uthermal_ref[Uthermal_ref.size-1]
+Ufond = kb*T #Uthermal_ref[Uthermal_ref.size-1]
 print(Ufond)
 
 
@@ -295,8 +297,8 @@ fig, ax = plt.subplots()
 ax.plot(time, totUtherm, marker='x', linestyle='-', color='b')
 ax.set_xlabel("Time [MY]")
 ax.set_ylabel("Total Thermal Energy")
-ax.set_xscale("log")
-ax.set_yscale("log")
+#ax.set_xscale("log")
+#ax.set_yscale("log")
 ax.grid(True)
 fig.savefig(simulation_directory+"/plots/TotalUth")
 
@@ -305,8 +307,8 @@ fig, ax = plt.subplots()
 ax.plot(time, totUkin, marker='x', linestyle='-', color='b')
 ax.set_xlabel("Time [MY]")
 ax.set_ylabel("Total Kinetic Energy")
-ax.set_xscale("log")
-ax.set_yscale("log")
+#ax.set_xscale("log")
+#ax.set_yscale("log")
 ax.grid(True)
 fig.savefig(simulation_directory+"/plots/TotalUkin")
 
@@ -315,8 +317,8 @@ fig, ax = plt.subplots()
 ax.plot(time, totUtot, marker='x', linestyle='-', color='b')
 ax.set_xlabel("Time [MY]")
 ax.set_ylabel("Total Energy")
-ax.set_xscale("log")
-ax.set_yscale("log")
+#ax.set_xscale("log")
+#ax.set_yscale("log")
 ax.grid(True)
 fig.savefig(simulation_directory+"/plots/TotalU")
 
