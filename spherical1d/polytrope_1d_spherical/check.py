@@ -51,6 +51,9 @@ Uthermal_ref = np.array(data["PartType0"]["InternalEnergy"], dtype = FloatType)
 Accel_ref = np.array(data["PartType0"]["Acceleration"], dtype = FloatType)[:,0]
 GradPress_ref = np.array(data["PartType0"]["PressureGradient"], dtype = FloatType)[:,0]
 UnitTime = 0.977 #in MY
+CGSTime = UnitTime*31.6e+12
+CGSMass = 1.988e+33
+CGSlenght = 3.086e+18
 
 
 time = []
@@ -66,10 +69,8 @@ totUkin = np.zeros(20)
 totUtot = np.zeros(20)
 Uthermal_all = np.empty((0,i_snap))
 Ukinetic_all = np.empty((0,i_snap))
-Utot_all = Uthermal_all + Ukinetic_all
-Ufond = kb*T #Uthermal_ref[Uthermal_ref.size-1]
-print(Ufond)
-
+Utot_all = (Uthermal_all + Ukinetic_all)
+Ufond =  kb*T #Uthermal_ref[Uthermal_ref.size-1]
 
 
 
@@ -103,9 +104,9 @@ while True:
     Ukinetic = 0.5*Velocity**2*Mass
 
     totRadMom[i_snap-1] = RadMom.sum()
-    totUtherm[i_snap-1] = Uthermal.sum() - Ufond
-    totUkin[i_snap-1] = Ukinetic.sum()
-    totUtot[i_snap-1] = Uthermal.sum() - Ufond + Ukinetic.sum()
+    totUtherm[i_snap-1] = (Uthermal.sum() - Ufond)*CGSMass*CGSlenght**2/CGSTime**2
+    totUkin[i_snap-1] = Ukinetic.sum()*CGSMass*CGSlenght**2/CGSTime**2
+    totUtot[i_snap-1] = (Uthermal.sum() - Ufond + Ukinetic.sum())*CGSMass*CGSlenght**2/CGSTime**2
 
     
     
@@ -315,8 +316,8 @@ fig.savefig(simulation_directory+"/plots/TotalUkin")
 #  Total Energy
 fig, ax = plt.subplots()
 ax.plot(time, totUtot, marker='x', linestyle='-', color='b')
-ax.set_xlabel("Time [MY]")
-ax.set_ylabel("Total Energy")
+ax.set_xlabel("Time [MYs]")
+ax.set_ylabel("Total Energy [ergs]")
 #ax.set_xscale("log")
 #ax.set_yscale("log")
 ax.grid(True)
