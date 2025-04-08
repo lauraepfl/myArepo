@@ -7,4 +7,5 @@
 #SBATCH --mem=1G
 #SBATCH --time=00:30:00
 
+
 mpirun -np 1 ./Arepo param.txt

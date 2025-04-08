@@ -29,7 +29,7 @@ TREE_BASED_TIMESTEPS                     # non-local timestep criterion (take 's
 MHD                           # Master switch for magnetohydrodynamics
 MHD_POWELL                    
 EXTERNALGRAVITY
-MHD_SEEDFIELD
+MHD_SEEDFIELD=0.04
 #---------------------------------------
 #RIEMANN_HLLC
 RIEMANN_HLLD
