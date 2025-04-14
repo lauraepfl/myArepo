@@ -40,6 +40,7 @@ scale_m    = 1.98e+33
 scale_t = scale_l/scale_v
 scale_p = scale_m/(scale_l*scale_t**2)
 scale_d = 6.807e-23
+scale_E = scale_m*scale_v**2
 pressure_0 = pressure/scale_p
 
 
@@ -80,8 +81,8 @@ Uthermal = Pressure / Density / (gamma - FloatType(1.0) )
 Mass = Density
 ncells = 0
 TotalEnergy = 1e+51
-scale_E = scale_m*scale_v**2
 TotalEnergy_0 = TotalEnergy/scale_E
+TotVolume = 4./3.*np.pi*((Boxsize/10)**3)
 
 def Volume(i) :
     if i == 0 :
@@ -99,10 +100,13 @@ for i,r in enumerate(Radius) :
 for i,r in enumerate(Radius) :                      #initialize high energy in a small part of space (1/10 of boxsize)
     if r < Boxsize/10 :
        
-       Uthermal[i] += TotalEnergy_0/ncells/Volume(i)
+       Uthermal[i] += TotalEnergy_0/ncells#/Volume(i)
+
+print(Uthermal.sum()*scale_E)#*4./3.*np.pi*(Boxsize)**3)
+#quit()
 
 """ write *.hdf5 file; minimum number of fields required by Arepo """
-IC = h5py.File(FilePath, 'w')    # open/create file
+IC = h5py.File(FilePath, 'w')    # open/cr#eate file
 
 ## create hdf5 groups
 header = IC.create_group("Header")    # create header group

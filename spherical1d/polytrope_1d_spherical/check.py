@@ -10,7 +10,7 @@ import numpy as np    # scientific computing package
 import h5py    # hdf5 format
 import os      # file specific calls
 import matplotlib.pyplot as plt    ## needs to be active for plotting!
-plt.rcParams['text.usetex'] = True
+#plt.rcParams['text.usetex'] = True
 
 makeplots = True
 if len(sys.argv) > 2:
@@ -42,18 +42,37 @@ DeltaMaxAllowed = 0.001 * FloatType(NumberOfCells/256.0)**-2
 i_snap = 0
 directory = simulation_directory+"/output/"
 filename = "snap_%03d.hdf5" % (i_snap)
-data = h5py.File(directory+filename, "r")
-Pos_ref = np.array(data["PartType0"]["Coordinates"], dtype = FloatType)[:,0]
-Density_ref = np.array(data["PartType0"]["Density"], dtype = FloatType)
-Velocity_ref = np.array(data["PartType0"]["Velocities"], dtype = FloatType)[:,0]
-Uthermal_ref = np.array(data["PartType0"]["InternalEnergy"], dtype = FloatType)
+#data = h5py.File(directory+filename, "r")
+#Pos_ref = np.array(data["PartType0"]["Coordinates"], dtype = FloatType)[:,0]
+#Density_ref = np.array(data["PartType0"]["Density"], dtype = FloatType)
+#Velocity_ref = np.array(data["PartType0"]["Velocities"], dtype = FloatType)[:,0]
+Uthermal_0 = np.array(data["PartType0"]["InternalEnergy"], dtype = FloatType)
 
-Accel_ref = np.array(data["PartType0"]["Acceleration"], dtype = FloatType)[:,0]
-GradPress_ref = np.array(data["PartType0"]["PressureGradient"], dtype = FloatType)[:,0]
+#Accel_ref = np.array(data["PartType0"]["Acceleration"], dtype = FloatType)[:,0]
+#GradPress_ref = np.array(data["PartType0"]["PressureGradient"], dtype = FloatType)[:,0]
 UnitTime = 0.977 #in MY
+gamma = 1.666  ## note: this has to be consistent with the parameter settings for Arepo
+Temperature = 1e+4
+kb = 1.38e-16
+mH = 1.67e-24
+scale_v =  1e+5
+scale_l   =  3.086e+18
+scale_m    = 1.98e+33
+scale_t = scale_l/scale_v
+scale_p = scale_m/(scale_l*scale_t**2)
+scale_d = 6.807e-23
+scale_E = scale_m*scale_v**2
 CGSTime = UnitTime*31.6e+12
 CGSMass = 1.988e+33
 CGSlenght = 3.086e+18
+CGSVelocity = CGSlenght/CGSTime
+ergs = 1e-7
+meters = 1e-3
+kg = 1e-3
+
+#print(Uthermal_0.sum()*scale_E)
+#quit()
+
 
 
 time = []
@@ -71,6 +90,13 @@ Uthermal_all = np.empty((0,i_snap))
 Ukinetic_all = np.empty((0,i_snap))
 Utot_all = (Uthermal_all + Ukinetic_all)
 Ufond =  kb*T #Uthermal_ref[Uthermal_ref.size-1]
+eta = 2.026
+E = 1e+51
+density_0 = 1.0*scale_d #repris de create.py QUOI METTRE???
+rAna = np.zeros(20)
+vAna = np.zeros(20)
+RadAna = np.zeros(20)
+
 
 
 
@@ -91,6 +117,8 @@ while True:
     Velocity = np.array(data["PartType0"]["Velocities"], dtype = FloatType)[:,0]
     Uthermal = np.array(data["PartType0"]["InternalEnergy"], dtype = FloatType)
     Volume = []
+    mu = 14/23*mH
+    Temperature = 2/3*mu*mH*Uthermal/kb/Density
 
     for i,r in enumerate(Pos) :
       if i == 0 :
@@ -98,15 +126,24 @@ while True:
       else :
         Volume.append(4./3.*np.pi*(Pos[i]**3 - Pos[i-1]**3))
 
-
+    n = Density*CGSMass/Volume/CGSlenght**3/mu/mH
     Mass = Density*Volume
     RadMom = Velocity*Mass
     Ukinetic = 0.5*Velocity**2*Mass
+    Pressure = n*Temperature*kb #Temperature*kb*Density/mu/mH MAUVAISE VALEUR
 
     totRadMom[i_snap-1] = RadMom.sum()
     totUtherm[i_snap-1] = (Uthermal.sum() - Ufond)*CGSMass*CGSlenght**2/CGSTime**2
     totUkin[i_snap-1] = Ukinetic.sum()*CGSMass*CGSlenght**2/CGSTime**2
     totUtot[i_snap-1] = (Uthermal.sum() - Ufond + Ukinetic.sum())*CGSMass*CGSlenght**2/CGSTime**2
+
+    t= time_step*i_snap*scale_t
+
+    ################################# Solution analytique #####################################
+    rAna[i_snap-1] = (eta*E*scale_E/density_0)**0.2*t*scale_l
+    vAna[i_snap-1] = np.gradient(rAna[i_snap], t)
+    RadAna[i_snap-1] = vAna*Mass
+    
 
     
     
@@ -152,7 +189,7 @@ while True:
         
         ax[0].plot(Pos, Density, 'b', label='evolved profile')
         ax[0].plot(Pos, Density, 'r+', label='Arepo cells')
-        ax[0].plot(Pos_ref, Density_ref, 'k--', label='initial profile', lw=0.7)
+       # ax[0].plot(Pos_ref, Density_ref, 'k--', label='initial profile', lw=0.7)
         ax[0].set_ylabel(r"density")
         #ax[0].fill_between([0.1,0.7],[0.0,0.0],[1.01,1.01], color='k',alpha=0.2)
         #ax[0].set_ylim( 0., 1. )
@@ -160,23 +197,23 @@ while True:
         ax[0].set_xscale("log")
 
         
-        ax[1].plot(Pos, Density, 'b')
-        ax[1].plot(Pos_ref, [1.0]*Pos_ref.shape[0], 'k--', lw=0.7)
-        ax[1].set_ylabel(r"rel. density")
+        ax[1].plot(Pos, Temperature, 'b')
+       # ax[1].plot(Pos_ref, [1.0]*Pos_ref.shape[0], 'k--', lw=0.7)
+        ax[1].set_ylabel(r"Temperature [K]")
         #ax[1].set_ylim([0.99,1.01])
         #ax[1].fill_between([0.1,0.7],[0.99,0.99],[1.01,1.01], color='k',alpha=0.2)
         
         ax[2].plot(Pos, Velocity, 'b')
-        ax[2].plot(Pos_ref, [0.0]*Pos_ref.shape[0], 'k--', lw=0.7)
+       # ax[2].plot(Pos_ref, [0.0]*Pos_ref.shape[0], 'k--', lw=0.7)
         ax[2].set_ylabel(r"velocity")
         #ax[2].set_ylim([-0.01,0.01])
         #ax[2].fill_between([0.1,0.7],[-0.01,-0.01],[0.01,0.01], color='k',alpha=0.2)
         
-        ax[3].plot(Pos[:-1], Accel[:-1] - GradPress[:-1] / Density[:-1], 'b')
-        ax[3].plot(Pos_ref[:-1], Accel_ref[:-1] - GradPress_ref[:-1] / Density_ref[:-1], 'k--', lw=0.7)
+        ax[3].plot(Pos, Pressure, 'b')
+        #ax[3].plot(Pos_ref[:-1], Accel_ref[:-1] - GradPress_ref[:-1] / Density_ref[:-1], 'k--', lw=0.7)
        # ax[3].set_ylim([-0.5,0.1])#
         
-        ax[3].set_ylabel(r"net accel.")
+        ax[3].set_ylabel(r"Pressure")
         ax[3].set_xlabel(r"radius")
        # ax[3].set_xlim([0.0,0.8])
        # ax[3].fill_between([0.1,0.7],[-0.5,-0.5],[0.1,0.1], color='k',alpha=0.2)
@@ -187,30 +224,30 @@ while True:
         
         if not os.path.exists( simulation_directory+"/plots" ):
           os.mkdir( simulation_directory+"/plots" )
-        fig.savefig(simulation_directory+"/plots/profiles_%03d.pdf"%i_snap)
+        fig.savefig(simulation_directory+"/plots/profiles_%03d.png"%i_snap)
         plt.close(fig)
     
     
     """ compare to ICs by interpolating to IC positions """
     
-    delta_dens = np.interp(Pos_ref, Pos, Density) - Density_ref
-    delta_vel = np.interp(Pos_ref, Pos, Velocity) - Velocity_ref
-    delta_uthermal = np.interp(Pos_ref, Pos, Uthermal) - Uthermal_ref
+  #  delta_dens = np.interp(Pos_ref, Pos, Density) - Density_ref
+  #  delta_vel = np.interp(Pos_ref, Pos, Velocity) - Velocity_ref
+  #  delta_uthermal = np.interp(Pos_ref, Pos, Uthermal) - Uthermal_ref
     
     ## L1 norm
-    i_check, = np.where(Pos_ref < 0.7)
+   # i_check, = np.where(Pos_ref < 0.7)
     
-    L1_dens = np.average( np.abs(delta_dens[i_check]) )
-    L1_vel = np.average( np.abs(delta_vel[i_check]) )
-    L1_uthermal = np.average( np.abs(delta_uthermal[i_check]) )
+   # L1_dens = np.average( np.abs(delta_dens[i_check]) )
+   # L1_vel = np.average( np.abs(delta_vel[i_check]) )
+   # L1_uthermal = np.average( np.abs(delta_uthermal[i_check]) )
     
     
     """ printing results """
-    print("examples/polytrope_1d_spherical/check.py: L1 error of " + filename +":")
-    print("\t density: %g" % L1_dens)
-    print("\t velocity: %g" % L1_vel)
-    print("\t specific internal energy: %g" % L1_uthermal)
-    print("\t tolerance: %g for %d cells" % (DeltaMaxAllowed, NumberOfCells) )
+   # print("examples/polytrope_1d_spherical/check.py: L1 error of " + filename +":")
+   # print("\t density: %g" % L1_dens)
+   # print("\t velocity: %g" % L1_vel)
+   # print("\t specific internal energy: %g" % L1_uthermal)
+   # print("\t tolerance: %g for %d cells" % (DeltaMaxAllowed, NumberOfCells) )
     
     """ criteria for failing the test """
   #  if L1_dens > DeltaMaxAllowed or L1_vel > DeltaMaxAllowed or L1_uthermal > DeltaMaxAllowed:
@@ -241,6 +278,7 @@ fig.savefig(simulation_directory+"/plots/RadialMomentum")
 # Peak radial momentum evolution
 fig, ax = plt.subplots()
 ax.plot(time, peak_Rad, marker='x', linestyle='-', color='b')
+ax.plot(time, rAna, marker='x', linestyle='-', color='r')
 ax.set_xlabel("Time [MY]")
 ax.set_ylabel("Radial Momentum peak position [pc]")
 #ax.set_title("Case with cooling")
