@@ -94,6 +94,7 @@ eta = 2.026
 E = 1e+51
 density_0 = 1.0*scale_d #repris de create.py QUOI METTRE???
 rAna = np.zeros(20)
+MassAll = np.zeros(20)
 vAna = np.zeros(20)
 RadAna = np.zeros(20)
 
@@ -137,13 +138,16 @@ while True:
     totUkin[i_snap-1] = Ukinetic.sum()*CGSMass*CGSlenght**2/CGSTime**2
     totUtot[i_snap-1] = (Uthermal.sum() - Ufond + Ukinetic.sum())*CGSMass*CGSlenght**2/CGSTime**2
 
-    t= time_step*i_snap*scale_t
+    t= time_step*i_snap
 
     ################################# Solution analytique #####################################
-    rAna[i_snap-1] = (eta*E*scale_E/density_0)**0.2*t*scale_l
-    vAna[i_snap-1] = np.gradient(rAna[i_snap], t)
-    RadAna[i_snap-1] = vAna*Mass
-    
+    rAna[i_snap-1] = (eta*E/scale_E/density_0*scale_d)**0.2*t #pas cgs
+    MassAll[i_snap-1] = Mass.sum()/scale_m
+   # if MassAll.size == 0:
+    #  MassAll = Mass[np.newaxis, :]  # Crée une matrice 2D avec une seule ligne
+    #else:
+    #  MassAll = np.vstack((MassAll, Mass))  # Ajoute une nouvelle ligne
+
 
     
     
@@ -155,8 +159,9 @@ while True:
     peak_position = Pos[peak_index]
 
     # Find peak of Radial Momentum
-    peakRad_index = np.argmax(RadMom)
-    RadPos = Pos[peakRad_index]
+    lastpeak = RadMom[::-1] #inverse la liste
+    peakRad_index = np.argmax(lastpeak)
+    RadPos = Pos[256 - peakRad_index]
 
     # time of the snap
     time.append(i_snap * time_step * UnitTime)
@@ -252,12 +257,17 @@ while True:
     """ criteria for failing the test """
   #  if L1_dens > DeltaMaxAllowed or L1_vel > DeltaMaxAllowed or L1_uthermal > DeltaMaxAllowed:
   #      sys.exit(1)
+########################Solution Analytique######################
+vAna = np.gradient(rAna, t)
+RadAna = vAna*MassAll*scale_m
+    
 
 ####################################### plots ######################################
 
 # front wave evolution
 fig, ax = plt.subplots()
 ax.plot(time, peak_positions, marker='x', linestyle='-', color='b')
+ax.plot(time, rAna, marker='x', linestyle='-', color='r')
 ax.set_xlabel("Time [MY]")
 ax.set_ylabel("front position [pc]")
 ax.grid(True)
@@ -278,7 +288,6 @@ fig.savefig(simulation_directory+"/plots/RadialMomentum")
 # Peak radial momentum evolution
 fig, ax = plt.subplots()
 ax.plot(time, peak_Rad, marker='x', linestyle='-', color='b')
-ax.plot(time, rAna, marker='x', linestyle='-', color='r')
 ax.set_xlabel("Time [MY]")
 ax.set_ylabel("Radial Momentum peak position [pc]")
 #ax.set_title("Case with cooling")
@@ -324,6 +333,7 @@ fig.savefig(simulation_directory+"/plots/Tot_Energy")
 #  Total radial momentum
 fig, ax = plt.subplots()
 ax.plot(time, totRadMom, marker='x', linestyle='-', color='b')
+ax.plot(time, RadAna, marker='x', linestyle='-', color='r')
 ax.set_xlabel("Time [MY]")
 ax.set_ylabel("Total Radial Momentum")
 ax.set_xscale("log")
