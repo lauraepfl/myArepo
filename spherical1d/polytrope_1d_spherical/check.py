@@ -142,7 +142,7 @@ while True:
 
     ################################# Solution analytique #####################################
     rAna[i_snap-1] = (eta*E/scale_E/density_0*scale_d)**0.2*t #pas cgs
-    MassAll[i_snap-1] = Mass.sum()/scale_m
+    MassAll[i_snap-1] = Mass.sum()
    # if MassAll.size == 0:
     #  MassAll = Mass[np.newaxis, :]  # Crée une matrice 2D avec une seule ligne
     #else:
@@ -259,7 +259,22 @@ while True:
   #      sys.exit(1)
 ########################Solution Analytique######################
 vAna = np.gradient(rAna, t)
-RadAna = vAna*MassAll*scale_m
+RadAna = vAna*MassAll
+
+############################# Fit linéaire ###########################################
+
+# Transformation log10
+log_Rad = np.log10(totRadMom)
+log_time = np.log10(time)
+
+# Fit linéaire
+coeffs = np.polyfit(log_time, log_Rad, 1)
+slope, intercept = coeffs
+#print(f"Pente = {slope:.3f}, Ordonnée à l'origine = {intercept:.3f}")
+
+# Courbe de fit
+x_fit = np.linspace(min(time), max(time), 100)
+y_fit = 10**intercept * x_fit**slope
     
 
 ####################################### plots ######################################
@@ -334,10 +349,12 @@ fig.savefig(simulation_directory+"/plots/Tot_Energy")
 fig, ax = plt.subplots()
 ax.plot(time, totRadMom, marker='x', linestyle='-', color='b')
 ax.plot(time, RadAna, marker='x', linestyle='-', color='r')
+plt.loglog(x_fit, y_fit, '-', color='m', label=f'Fit: y = {10**intercept:.3g} * x^{slope:.3g}')
 ax.set_xlabel("Time [MY]")
 ax.set_ylabel("Total Radial Momentum")
 ax.set_xscale("log")
 ax.set_yscale("log")
+plt.legend()
 ax.grid(True)
 fig.savefig(simulation_directory+"/plots/TotalRad")
 
